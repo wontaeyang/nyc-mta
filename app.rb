@@ -6,7 +6,7 @@ def setup
 	size 1018, 800
 	smooth
 	text_size(18);
-	text_font create_font("Helvetica Neue", 14)
+	text_font create_font("Helvetica Neue", 16)
 
 	#variable setup
 	$time = 0.0
@@ -16,18 +16,22 @@ def setup
 	#initialize
 	@timer = Timer.new
 	# @subway = Vehicle.new(Route.find(1171))
-	@subways = Route.where(carid: "1").collect {|sub| Vehicle.new(sub) }
+	@subways = Route.all.collect {|sub| Vehicle.new(sub) }
 	
 end
 
 def draw
 	#refresh background
 	background 0
+	fill 255
+	text("NYC ON RAILS", 70, 100)
+	fill 120
+	text("WONTAE YANG", 70, 115)
 	@timer.update
 	@subways.each {|sub| sub.update}
 
 	#this saves every frame as png
-	# save_frame("./output/seq-######.png")
+	save_frame("./output/seq-######.png")
 
 end
 
@@ -58,33 +62,33 @@ class Timer
 		end
 
 		#timeline
-		@tick_increment = $app.width / 24
+		@tick_increment = ($app.width.to_f) / 24.0
 		@tick_spacing = []
 		(1..24).each {|i| @tick_spacing.push(i * @tick_increment)}
 		@tick_spacing.each do |spacing|
 			stroke(100)
-			stroke_weight(1)
+			stroke_weight(2)
 			stroke_cap(SQUARE)
-			line(spacing, 0, spacing, 18)
+			line(spacing, 0, spacing, 20)
 			stroke(50)
-			stroke_weight(1)
+			stroke_weight(2)
 			stroke_cap(SQUARE)
-			line((spacing - (@tick_increment / 2)), 0, (spacing - (@tick_increment / 2)), 10)
+			line((spacing - (@tick_increment / 2)), 0, (spacing - (@tick_increment / 2)), 14)
 		end
 
 		#line for actual minute
 		stroke(255, 0, 0)
-		stroke_weight(3)
+		stroke_weight(4)
 		stroke_cap(SQUARE)
 		@loc_timeline = map($time, 0, 1440, 0, $app.width)
-		line(@loc_timeline, 0, @loc_timeline, 22)
+		line(@loc_timeline, 0, @loc_timeline, 28)
 
 		#text draw and update every frame
 		@hour = ($time / 60.0).floor
 		@minute = $time - (@hour * 60.0)
-		@text_translate = map($time, 0.0, 1440.0, 0.0, 33.0 )
+		@text_translate = map($time, 0.0, 1440.0, 0.0, 42.0 )
 		fill 255
-		text( @hour.to_i.to_s + "." + @minute.to_i.to_s, @loc_timeline - @text_translate, 35); 
+		text( @hour.to_i.to_s + "." + @minute.to_i.to_s, @loc_timeline - @text_translate, 43) 
 	end
 end
 
