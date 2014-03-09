@@ -1,10 +1,9 @@
 require_relative './config/environment'
 require 'ruby-processing'
-include_package "processing.video"
 
 def setup
 	#drawing setup
-	size 550, 800
+	size 1018, 800
 	smooth
 	text_size(18);
 	text_font create_font("Helvetica Neue", 14)
@@ -26,8 +25,9 @@ def draw
 	background 0
 	@timer.update
 	@subways.each {|sub| sub.update}
-	# @subway.update
-	save_frame("./output/seq-######.png")
+
+	#this saves every frame as png
+	# save_frame("./output/seq-######.png")
 
 end
 
@@ -58,7 +58,7 @@ class Timer
 		end
 
 		#timeline
-		@tick_increment = $app.width/24
+		@tick_increment = $app.width / 24
 		@tick_spacing = []
 		(1..24).each {|i| @tick_spacing.push(i * @tick_increment)}
 		@tick_spacing.each do |spacing|
@@ -120,7 +120,7 @@ class Vehicle
 	end
 
 	def normalize_x(coord)
-		map(coord, -74.014065, -73.828121, 0, $app.width)
+		map(coord, -74.014065, -73.828121, 0 + 50, $app.width - 50)
 	end
 
 	def update
