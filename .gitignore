@@ -4,6 +4,7 @@ capybara-*.html
 .rspec
 /log
 /tmp
+/output
 /data
 /bin
 /backup

@@ -1,6 +1,6 @@
 require_relative './config/environment'
 require 'ruby-processing'
-
+include_package "processing.video"
 
 def setup
 	#drawing setup
@@ -17,8 +17,7 @@ def setup
 	#initialize
 	@timer = Timer.new
 	# @subway = Vehicle.new(Route.find(1171))
-	@subway = Route.limit(1199)
-	@subways = @subway.collect {|sub| Vehicle.new(sub) }
+	@subways = Route.where(carid: "1").collect {|sub| Vehicle.new(sub) }
 	
 end
 
@@ -28,6 +27,7 @@ def draw
 	@timer.update
 	@subways.each {|sub| sub.update}
 	# @subway.update
+	save_frame("./output/seq-######.png")
 
 end
 
@@ -94,11 +94,13 @@ class Vehicle
 
 	def initialize(route)
 		@route = route
+
+		#color setting setup
 		@color = route.color.split(",")
 		@r = @color[0].to_i
 		@g = @color[1].to_i
 		@b = @color[2].to_i
-		@a = 256
+		@a = 0
 
 		@stops = route.stops
 		@current_stop = 0
@@ -114,7 +116,7 @@ class Vehicle
 	end
 
 	def normalize_y(coord)
-		map(coord, 40.632836, 40.903125, 0, $app.height)
+		map(coord, 40.632836, 40.903125, $app.height, 0)
 	end
 
 	def normalize_x(coord)
@@ -135,7 +137,7 @@ class Vehicle
 			@next_x = normalize_x(@stops[@current_stop + 1].lon)
 			@next_y = normalize_y(@stops[@current_stop + 1].lat)
 			@trigger_time = @stops[@current_stop + 1].departure
-
+			@a = 256
 			@current_stop += 1
 		elsif @current_stop == @stops.size - 1
 			@a = 0

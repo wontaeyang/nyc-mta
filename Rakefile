@@ -9,13 +9,13 @@ task :console => [:environment] do
 end
 
 task :setup => :environment do
-  Dir.glob("db/migrate/*").each do |f|
-    require_relative f
-    migration_name = f.gsub("db/migrate/", "").gsub(".rb", "").gsub(/\d+/, "").split("_").collect(&:capitalize).join
-    begin
-      Kernel.const_get(migration_name).migrate(:up)
-    rescue; end
-  end
+	Dir.glob("db/migrate/*").each do |f|
+		require_relative f
+		migration_name = f.gsub("db/migrate/", "").gsub(".rb", "").gsub(/\d+/, "").split("_").collect(&:capitalize).join
+		begin
+			Kernel.const_get(migration_name).migrate(:up)
+		rescue; end
+	end
 end
 
 task :seed => [:environment] do
@@ -28,19 +28,25 @@ task :seed => [:environment] do
 		Station.create(:name => station.id, :lat => station.lat, :lon => station.lon)
 	end
 
+	#missing stations; GTFS error; Station is deprecated
+	Station.create(:name => "R60", :lat => 40.752553, :lon => -73.944152)
+	Station.create(:name => "R60N", :lat => 40.752553, :lon => -73.944152)
+	Station.create(:name => "R60S", :lat => 40.752553, :lon => -73.944152)
+
+
 	#empty hash to collect route information
 	route_color_hash = {}
 	route_start_hash = {}
 
 	routes.each do |route|
-		if route.color != nil
-			rgb = route.color.scan(/../).collect {|i| i.hex }.join(",")
-		else
+		if route.color == nil || route.color == ""
 			rgb = "255,255,255"
+		elsif route.color != nil
+			rgb = route.color.scan(/../).collect {|i| i.hex }.join(",")
 		end
 
 		route_color_hash[route.id] = rgb
-		# Route.create(:carid => route.id, :color => rgb, :longname => route.long_name)
+		
 	end
 
 	def minuteparser(time)
@@ -52,30 +58,48 @@ task :seed => [:environment] do
 	stops.each do |stop|
 
 		#setup data for migration
-		array = stop.trip_id.split(/_|\W{2}|(\d{2}R)/)
-		serviceid = array[0]
+		trip_id = stop.trip_id
+		id_array = trip_id.split(/_|\W{2}|(\d{2}R)|\d{7,}/)
 		
-		start = array[1][0..3].to_i
-		carid = array[2]
-		direction = array[3]
+		week = id_array[1]
+		start = id_array[2][0..3].to_i
+		carid = id_array[3]
+		direction = id_array[4]
 
-		if serviceid == "A20130803WKD"
+		if week == "WKD"
 			#setup route
-			Route.create(:carid => carid, :starting => start, :color => route_color_hash[carid], :serviceid => serviceid) if route_start_hash.has_key?(start) == false
-			route_start_hash[start] = nil
+			Route.create(:carid => carid, :starting => start, :color => route_color_hash[carid], :serviceid => trip_id) if route_start_hash.has_key?(trip_id) == false
+			route_start_hash[trip_id] = nil
 
 			#setup stops
-			car = Route.all.find_by(starting: start)
+			car = Route.all.find_by(serviceid: trip_id)
 			departure_time = minuteparser(stop.departure_time)
 			arrival_time = minuteparser(stop.departure_time)
 			Stop.create(:stopsequence => stop.stop_sequence, :departure => departure_time, :arrival => arrival_time, :route => car, :lat => Station.where(:name => stop.stop_id).first.lat, :lon => Station.where(:name => stop.stop_id).first.lon)
+			# following comment checks for missing stations; R60 missing currently
+			# puts stop.stop_id if Station.where(:name => stop.stop_id) == nil || Station.where(:name => stop.stop_id) == []
 		end
 
 	end
 
+	
+
+end
+
+
+task :end_time => [:environment] do
 	Route.all.each do |route|
 		end_time = route.stops.order(arrival: :desc).first.arrival
 		route.update_attributes(ending: end_time)
+	end
+
+end
+
+task :fill_color => [:environment] do
+	Route.all.each do |route|
+		if route.color == nil
+			route.update_attributes(color: "255,255,255")
+		end
 	end
 
 end
