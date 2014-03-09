@@ -11,18 +11,23 @@ def setup
 
 	#variable setup
 	$time = 0.0
+	#radius setup
+	$radius = 7.0
 
 	#initialize
 	@timer = Timer.new
+	# @subway = Vehicle.new(Route.find(1171))
+	@subway = Route.limit(1199)
+	@subways = @subway.collect {|sub| Vehicle.new(sub) }
+	
 end
 
 def draw
 	#refresh background
 	background 0
-
-
-	
 	@timer.update
+	@subways.each {|sub| sub.update}
+	# @subway.update
 
 end
 
@@ -78,17 +83,64 @@ class Timer
 		@hour = ($time / 60.0).floor
 		@minute = $time - (@hour * 60.0)
 		@text_translate = map($time, 0.0, 1440.0, 0.0, 33.0 )
+		fill 255
 		text( @hour.to_i.to_s + "." + @minute.to_i.to_s, @loc_timeline - @text_translate, 35); 
 	end
 end
 
 class Vehicle
 	include Processing::Proxy
+	attr_accessor :route, :stops, :lat, :lon, :start_time, :trigger_time
 
-	def initialize
+	def initialize(route)
+		@route = route
+		@color = route.color.split(",")
+		@r = @color[0].to_i
+		@g = @color[1].to_i
+		@b = @color[2].to_i
+		@a = 256
+
+		@stops = route.stops
+		@current_stop = 0
+
+		@current_x = normalize_x(@stops[@current_stop].lon)
+		@current_y = normalize_y(@stops[@current_stop].lat)
+		@next_x = @current_x
+		@next_y = @current_y
+
+		@trigger_time = @stops[@current_stop].departure
+		@delay = 5.0
+		
+	end
+
+	def normalize_y(coord)
+		map(coord, 40.632836, 40.903125, 0, $app.height)
+	end
+
+	def normalize_x(coord)
+		map(coord, -74.014065, -73.828121, 0, $app.width)
 	end
 
 	def update
+		fill @r, @g, @b, @a
+		no_stroke
+		@current_x += (@next_x - @current_x)/@delay
+		@current_y += (@next_y - @current_y)/@delay
+		
+		ellipse(@current_x.to_i, @current_y.to_i, $radius, $radius)
+
+
+
+		if @trigger_time == $time && @current_stop < @stops.size - 1
+			@next_x = normalize_x(@stops[@current_stop + 1].lon)
+			@next_y = normalize_y(@stops[@current_stop + 1].lat)
+			@trigger_time = @stops[@current_stop + 1].departure
+
+			@current_stop += 1
+		elsif @current_stop == @stops.size - 1
+			@a = 0
+	
+		end
 	end
 
 end
