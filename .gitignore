@@ -5,6 +5,7 @@ capybara-*.html
 /log
 /tmp
 /output
+/output2
 /data
 /bin
 /backup
