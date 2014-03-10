@@ -22,7 +22,7 @@ end
 
 def draw
 	#refresh background
-	background 0
+	background 30
 	fill 255
 	text("NYC ON RAILS", 70, 100)
 	fill 120
@@ -66,11 +66,11 @@ class Timer
 		@tick_spacing = []
 		(1..24).each {|i| @tick_spacing.push(i * @tick_increment)}
 		@tick_spacing.each do |spacing|
-			stroke(100)
+			stroke(135)
 			stroke_weight(2)
 			stroke_cap(SQUARE)
 			line(spacing, 0, spacing, 20)
-			stroke(50)
+			stroke(85)
 			stroke_weight(2)
 			stroke_cap(SQUARE)
 			line((spacing - (@tick_increment / 2)), 0, (spacing - (@tick_increment / 2)), 14)
