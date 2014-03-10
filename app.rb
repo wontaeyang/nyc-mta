@@ -1,5 +1,4 @@
 require_relative './config/environment'
-require 'ruby-processing'
 
 def setup
 	#drawing setup
@@ -24,10 +23,16 @@ end
 def draw
 	#refresh background
 	background 30
+
+	#draw title
 	fill 255
 	text("NYC ON RAILS", 70, 100)
+
+	#draw sub-title
 	fill 120
 	text("03.10.2014", 70, 115)
+
+	#update functions for classes
 	@timer.update
 	@subways.each {|sub| sub.update}
 
@@ -95,7 +100,7 @@ end
 
 class Vehicle
 	include Processing::Proxy
-	attr_accessor :route, :stops, :lat, :lon, :start_time, :trigger_time
+	attr_accessor :route, :stops, :start_time, :trigger_time
 
 	def initialize(route)
 		@route = route
@@ -107,15 +112,24 @@ class Vehicle
 		@b = @color[2].to_i
 		@a = 0
 
-		@stops = route.stops
-		@current_stop = 0
+		#make hash that contains stop information
+		@stops = {}
+		route.stops.each do |stop|
+			@stops[stop.stopsequence] = {:departure => stop.departure, :lat => stop.lat, :lon => stop.lon}
+		end
 
-		@current_x = normalize_x(@stops[@current_stop].lon)
-		@current_y = normalize_y(@stops[@current_stop].lat)
+		#instance variables for current stop and next stop
+		@current_stop = 1
+		@last_stop = @stops.keys.last
+
+		#set location data
+		@current_x = normalize_x(@stops[1][:lon])
+		@current_y = normalize_y(@stops[1][:lat])
 		@next_x = @current_x
 		@next_y = @current_y
 
-		@trigger_time = @stops[@current_stop].departure
+		#trigger time
+		@trigger_time = @stops[@current_stop][:departure]
 		@delay = 5.0
 		
 	end
@@ -128,25 +142,32 @@ class Vehicle
 		map(coord, -74.014065, -73.828121, 0 + 50, $app.width - 50)
 	end
 
+	#method to update next target location
+	def set_next
+		@next_x = normalize_x(@stops[@current_stop + 1][:lon])
+		@next_y = normalize_y(@stops[@current_stop + 1][:lat])
+		@trigger_time = @stops[@current_stop + 1][:departure]
+	end
+
 	def update
+		#set color for the train
 		fill @r, @g, @b, @a
 		no_stroke
+
+		#easing animation to next location
 		@current_x += (@next_x - @current_x)/@delay
 		@current_y += (@next_y - @current_y)/@delay
 		
+		#draw circle for train
 		ellipse(@current_x.to_i, @current_y.to_i, $radius, $radius)
 
-
-
-		if @trigger_time == $time && @current_stop < @stops.size - 1
-			@next_x = normalize_x(@stops[@current_stop + 1].lon)
-			@next_y = normalize_y(@stops[@current_stop + 1].lat)
-			@trigger_time = @stops[@current_stop + 1].departure
+		#check trigger time and update next location
+		if @trigger_time == $time && @current_stop < @last_stop
+			set_next
 			@a = 256
 			@current_stop += 1
-		elsif @current_stop == @stops.size - 1
+		elsif @trigger_time == $time && @current_stop == @last_stop
 			@a = 0
-	
 		end
 	end
 
