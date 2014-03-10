@@ -4,7 +4,8 @@ def setup
 	#drawing setup
 	size 1018, 800
 	smooth
-	text_size(18);
+
+	#set font
 	text_font create_font("Helvetica Neue", 16)
 
 	#variable setup
@@ -43,7 +44,9 @@ end
 
 
 
+#end of processing methods
 #---------------------------------------------------------------------------
+#begin helper classes
 
 
 
