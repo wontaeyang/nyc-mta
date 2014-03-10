@@ -16,7 +16,8 @@ def setup
 	#initialize
 	@timer = Timer.new
 	# @subway = Vehicle.new(Route.find(1171))
-	@subways = Route.all.collect {|sub| Vehicle.new(sub) }
+	# @subways = Route.all.collect {|sub| Vehicle.new(sub) }
+	@subways = Route.where(carid: "3").collect {|sub| Vehicle.new(sub) }
 	
 end
 
@@ -26,12 +27,12 @@ def draw
 	fill 255
 	text("NYC ON RAILS", 70, 100)
 	fill 120
-	text("WONTAE YANG", 70, 115)
+	text("03.10.2014", 70, 115)
 	@timer.update
 	@subways.each {|sub| sub.update}
 
 	#this saves every frame as png
-	save_frame("./output/seq-######.png")
+	# save_frame("./output2/seq-1#####.png")
 
 end
 
