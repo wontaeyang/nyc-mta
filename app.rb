@@ -18,8 +18,18 @@ def setup
 	@timer = Timer.new
 
 	# @subways = Route.all.collect {|sub| Vehicle.new(sub) }
-	@subways = Route.all.collect {|sub| Vehicle.new(sub) }
-	
+	# @subways = Route.all.collect {|sub| Vehicle.new(sub) }
+
+	#setup schedule hash
+	@schedule = {}
+
+	1440.times do |i|
+		array = Route.where(:starting => i).collect { |route| route.id }
+		@schedule[i] = array if !array.empty?
+	end
+
+	#setup active cars
+	$active_cars = []
 end
 
 def draw
@@ -36,13 +46,21 @@ def draw
 
 	#update functions for classes
 	@timer.update
-	@subways.each {|sub| sub.update}
+	init_vehicles
+
+	$active_cars.each {|car| car.update}
 
 	#this saves every frame as png
 	# save_frame("./output2/seq-1#####.png")
-
 end
 
+
+def init_vehicles
+	id_array = @schedule[$time.to_i]
+	if id_array != nil
+		id_array.each { |car| Vehicle.new(Route.find(car).attributes)}
+	end
+end
 
 
 #end of processing methods
@@ -104,34 +122,36 @@ end
 
 class Vehicle
 	include Processing::Proxy
-	attr_accessor :route, :stops, :start_time, :trigger_time
+	attr_accessor :route_id
 
-	def initialize(route)
-
+	def initialize(attributes)
+		@route_id = attributes["id"]
 		#color setting setup
-		@color = route.color.split(",")
-		@r = @color[0].to_i
-		@g = @color[1].to_i
-		@b = @color[2].to_i
+		color = attributes["color"].split(",")
+		@r = color[0].to_i
+		@g = color[1].to_i
+		@b = color[2].to_i
 		@a = 0
 
 		#load stops
-		@stops = route.stops
+		@stops = Route.find(@route_id).stops.first
 
 		#instance variables for current stop and next stop
 		@current_stop = 0
-		@last_stop = @stops.count - 1
+		@last_stop = attributes["stop_count"] - 1
 
 		#set location data
-		@current_x = normalize_x(@stops[@current_stop].lon)
-		@current_y = normalize_y(@stops[@current_stop].lat)
+		@current_x = normalize_x(@stops.lon)
+		@current_y = normalize_y(@stops.lat)
 		@next_x = @current_x
 		@next_y = @current_y
 
 		#trigger time
-		@trigger_time = @stops[@current_stop].departure
+		@trigger_time = @stops.departure
 		@delay = 4.0
-		
+
+		#add to active cars
+		$active_cars << self
 	end
 
 	def normalize_y(coord)
@@ -143,10 +163,12 @@ class Vehicle
 	end
 
 	#method to update next target location
-	def set_next
-		@next_x = normalize_x(@stops[@current_stop + 1].lon)
-		@next_y = normalize_y(@stops[@current_stop + 1].lat)
-		@trigger_time = @stops[@current_stop + 1].departure
+	def set_stop
+		@stops = Route.find(@route_id).stops[@current_stop]
+
+		@next_x = normalize_x(@stops.lon)
+		@next_y = normalize_y(@stops.lat)
+		@trigger_time = @stops.departure
 	end
 
 	def update
@@ -163,11 +185,12 @@ class Vehicle
 
 		#check trigger time and update next location
 		if @trigger_time == $time && @current_stop < @last_stop
-			set_next
-			@a = 256 if @a != 256
 			@current_stop += 1
+			set_stop
+			@a = 256 if @a != 256
 		elsif @trigger_time == $time && @current_stop == @last_stop
 			@a = 0
+			$active_cars.delete_if {|car| car == self }
 		end
 	end
 

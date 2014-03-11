@@ -28,3 +28,15 @@ diff = 0.496556
 x (0.390361 / 0.496556) = 800
 x= 800 / (0.390361 / 0.496556)
 x = 1017.6344460640279
+
+
+
+- create schedule queue
+- create list of active routes and pop if not active
+
+schedule = {}
+
+1440.times do |i|
+array = Route.where(:starting => i).collect { |route| route.id }
+schedule[i] = array if !array.empty?
+end

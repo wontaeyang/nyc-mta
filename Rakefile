@@ -99,6 +99,30 @@ task :fill_color => [:environment] do
 	end
 end
 
+task :stop_count => [:environment] do
+	Route.all.each do |route|
+		stop_count = route.stops.count
+		route.update_attributes(stop_count: stop_count)
+	end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #seed for bus
 # task :seed_bus => [:environment] do
 # 	@source = GTFS::Source.build('./data/google_transit_manhattan.zip')
