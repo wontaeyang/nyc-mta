@@ -115,25 +115,22 @@ class Vehicle
 		@b = @color[2].to_i
 		@a = 0
 
-		#make hash that contains stop information
-		@stops = {}
-		route.stops.each do |stop|
-			@stops[stop.stopsequence] = {:departure => stop.departure, :lat => stop.lat, :lon => stop.lon}
-		end
+		#load stops
+		@stops = route.stops
 
 		#instance variables for current stop and next stop
-		@current_stop = 1
-		@last_stop = @stops.keys.last
+		@current_stop = 0
+		@last_stop = @stops.count - 1
 
 		#set location data
-		@current_x = normalize_x(@stops[1][:lon])
-		@current_y = normalize_y(@stops[1][:lat])
+		@current_x = normalize_x(@stops[@current_stop].lon)
+		@current_y = normalize_y(@stops[@current_stop].lat)
 		@next_x = @current_x
 		@next_y = @current_y
 
 		#trigger time
-		@trigger_time = @stops[@current_stop][:departure]
-		@delay = 5.0
+		@trigger_time = @stops[@current_stop].departure
+		@delay = 4.0
 		
 	end
 
@@ -147,9 +144,9 @@ class Vehicle
 
 	#method to update next target location
 	def set_next
-		@next_x = normalize_x(@stops[@current_stop + 1][:lon])
-		@next_y = normalize_y(@stops[@current_stop + 1][:lat])
-		@trigger_time = @stops[@current_stop + 1][:departure]
+		@next_x = normalize_x(@stops[@current_stop + 1].lon)
+		@next_y = normalize_y(@stops[@current_stop + 1].lat)
+		@trigger_time = @stops[@current_stop + 1].departure
 	end
 
 	def update
