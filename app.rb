@@ -2,8 +2,9 @@ require_relative './config/environment'
 
 def setup
 	#drawing setup
+	#make sure to recalculate based on new dataset!!!
 	size 1018, 800
-	smooth
+	smooth #anti-aliasing
 
 	#set font
 	text_font create_font("Helvetica Neue", 16)
@@ -13,11 +14,11 @@ def setup
 	#radius setup
 	$radius = 7.0
 
-	#initialize
+	#initialize timeline
 	@timer = Timer.new
-	# @subway = Vehicle.new(Route.find(1171))
+
 	# @subways = Route.all.collect {|sub| Vehicle.new(sub) }
-	@subways = Route.where(carid: "3").collect {|sub| Vehicle.new(sub) }
+	@subways = Route.all.collect {|sub| Vehicle.new(sub) }
 	
 end
 
@@ -106,7 +107,6 @@ class Vehicle
 	attr_accessor :route, :stops, :start_time, :trigger_time
 
 	def initialize(route)
-		@route = route
 
 		#color setting setup
 		@color = route.color.split(",")
@@ -167,7 +167,7 @@ class Vehicle
 		#check trigger time and update next location
 		if @trigger_time == $time && @current_stop < @last_stop
 			set_next
-			@a = 256
+			@a = 256 if @a != 256
 			@current_stop += 1
 		elsif @trigger_time == $time && @current_stop == @last_stop
 			@a = 0
