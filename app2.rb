@@ -3,7 +3,7 @@ require_relative './config/environment'
 def setup
 	#drawing setup
 	#make sure to recalculate based on new dataset!!!
-	size 1018, 800
+	size 1018, 800 #caculated from ratio of max/min values of gps coord
 	smooth #anti-aliasing
 
 	#set font
@@ -13,18 +13,18 @@ def setup
 	$time = 0.0
 	#radius setup
 	$radius = 7.0
+	#animation delay
+	$delay = 3.0
+	#timeline animation
+	$timeline_loop = true
 
 	#initialize timeline
 	@timer = Timer.new
 
-	# @subways = Route.all.collect {|sub| Vehicle.new(sub) }
-	# @subways = Route.all.collect {|sub| Vehicle.new(sub) }
-
-	#setup schedule hash
+	#setup a hash trains with minutes they start operating
 	@schedule = {}
-
 	1440.times do |i|
-		array = Route.where(:starting => i).collect { |route| route.id }
+		array = Route.includes(:stops).where(:starting => i)
 		@schedule[i] = array if !array.empty?
 	end
 
@@ -34,7 +34,7 @@ end
 
 def draw
 	#refresh background
-	background 30
+	background 17
 
 	#draw title
 	fill 255
@@ -42,26 +42,27 @@ def draw
 
 	#draw sub-title
 	fill 120
-	text("03.10.2014", 70, 115)
+	text("03.13.2014", 70, 115)
 
 	#update functions for classes
-	@timer.update
+	if $timeline_loop == true
+		@timer.update
+	#initialize on demand
 	init_vehicles
+	#update active cars
 	$active_cars.each {|car| car.update}
-
-	#this saves every frame as png
-	# save_frame("./output2/seq-1#####.png")
+	end
 end
 
-
+#method for initializing vehicles from schedule
 def init_vehicles
 	id_array = @schedule[$time.to_i]
 	if id_array != nil
 		id_array.each do |car| 
-			route = Route.includes(:stops).find(car)
-			Vehicle.new(route.attributes, route.stops)
+			Vehicle.new(car.attributes, car.stops)
 		end
 	end
+	@schedule[$time.to_i] = nil  #reset cars in minutes to nil to free memory
 end
 
 
@@ -72,23 +73,25 @@ end
 
 
 class Timer
-	include Processing::Proxy
+	include Processing::Proxy #includes all the processing methods
 	def initialize
 		@time_tween = 0.0
 		@end_time = 1440.0
-		@delay = 3.0
 	end
 
 	def update
 		#time counter tween
-		@time_tween += (100 - @time_tween)/@delay
+		@time_tween += (100 - @time_tween)/$delay
 
 		#update function to draw time text
-		if @time_tween > 90
+		if @time_tween > 95
 			$time += 1
 			@time_tween = 0
-			$time = 0.0 if $time >= @end_time
-			stroke(255, 0, 0)
+			#stop animation and set time to 0 if it reaches end of time
+			if $time >= @end_time
+				$time = 0.0
+				$timeline_loop = false
+			end
 		end
 
 		#timeline
@@ -101,15 +104,12 @@ class Timer
 			stroke_cap(SQUARE)
 			line(spacing, 0, spacing, 20)
 			stroke(85)
-			stroke_weight(2)
-			stroke_cap(SQUARE)
 			line((spacing - (@tick_increment / 2)), 0, (spacing - (@tick_increment / 2)), 14)
 		end
 
 		#line for actual minute
 		stroke(255, 0, 0)
 		stroke_weight(4)
-		stroke_cap(SQUARE)
 		@loc_timeline = map($time, 0, 1440, 0, $app.width)
 		line(@loc_timeline, 0, @loc_timeline, 28)
 
@@ -124,16 +124,17 @@ end
 
 class Vehicle
 	include Processing::Proxy
-	attr_accessor :route_id
 
 	def initialize(attributes, init_stops)
+		#save ID for later use
 		@route_id = attributes["id"]
-		#color setting setup
+
+		#split color and assign it to each RBGA value
 		color = attributes["color"].split(",")
 		@r = color[0].to_i
 		@g = color[1].to_i
 		@b = color[2].to_i
-		@a = 0
+		@a = 255.0
 
 		#load stops
 		@stops = init_stops
@@ -150,7 +151,6 @@ class Vehicle
 
 		#trigger time
 		@trigger_time = @stops[@current_stop].departure
-		@delay = 4.0
 
 		#add to active cars
 		$active_cars << self
@@ -161,7 +161,7 @@ class Vehicle
 	end
 
 	def normalize_x(coord)
-		map(coord, -74.014065, -73.828121, 0 + 50, $app.width - 50)
+		map(coord, -74.020065, -73.78121, 0 + 50, $app.width - 50)
 	end
 
 	#method to update next target location
@@ -178,8 +178,8 @@ class Vehicle
 		no_stroke
 
 		#easing animation to next location
-		@current_x += (@next_x - @current_x)/@delay
-		@current_y += (@next_y - @current_y)/@delay
+		@current_x += (@next_x - @current_x)/$delay
+		@current_y += (@next_y - @current_y)/$delay
 		
 		#draw circle for train
 		ellipse(@current_x.to_i, @current_y.to_i, $radius, $radius)
@@ -187,7 +187,6 @@ class Vehicle
 		#check trigger time and update next location
 		if @trigger_time == $time && @current_stop < @last_stop
 			set_next_stop
-			@a = 256 if @a != 256
 		elsif @trigger_time == $time && @current_stop == @last_stop
 			@a = 0
 			$active_cars.delete_if {|car| car == self }

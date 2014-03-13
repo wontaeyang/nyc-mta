@@ -8,6 +8,7 @@ task :console => [:environment] do
 end
 
 task :setup => :environment do
+	@source = GTFS::Source.build('./data/google_transit.zip')
 	Dir.glob("db/migrate/*").each do |f|
 		require_relative f
 		migration_name = f.gsub("db/migrate/", "").gsub(".rb", "").gsub(/\d+/, "").split("_").collect(&:capitalize).join
@@ -15,6 +16,7 @@ task :setup => :environment do
 			Kernel.const_get(migration_name).migrate(:up)
 		rescue; end
 	end
+
 end
 
 task :seed => [:environment] do
