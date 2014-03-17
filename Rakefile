@@ -4,11 +4,12 @@ task :environment do
 end
 
 task :console => [:environment] do
+	@source = GTFS::Source.build('./data/google_transit_manhattan.zip')
+
 	Pry.start
 end
 
 task :setup => :environment do
-	@source = GTFS::Source.build('./data/google_transit.zip')
 	Dir.glob("db/migrate/*").each do |f|
 		require_relative f
 		migration_name = f.gsub("db/migrate/", "").gsub(".rb", "").gsub(/\d+/, "").split("_").collect(&:capitalize).join
@@ -109,63 +110,4 @@ task :stop_count => [:environment] do
 end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#seed for bus
-# task :seed_bus => [:environment] do
-# 	@source = GTFS::Source.build('./data/google_transit_manhattan.zip')
-
-# 	routes = @source.routes
-# 	stops = @source.stop_times
-# 	stations = @source.stops
-
-# 	#create stations
-# 	stations.each do |station|
-# 		Station.create(:name => station.id, :lat => station.lat, :lon => station.lon)
-# 	end
-
-# 	def minuteparser(time)
-# 		split_time = time.split(":")
-# 		minutes = (split_time[0].to_i * 60) + split_time[1].to_i
-# 		return minutes
-# 	end
-	
-# 	stops.each do |stop|
-
-# 		#setup data for migration
-# 		trip_id = stop.trip_id
-# 		id_array = trip_id.split(/-/)
-		
-# 		week = id_array[1]
-# 		sub_array = id_array.last.split(/_/)
-# 		start = sub_array.first[0..3].to_i
-# 		carid = sub_array[1]
-
-# 		if week == "Weekday"
-# 			#setup route
-# 			Route.create(:carid => carid, :starting => start, :color => "255,255,255", :serviceid => trip_id) if route_start_hash.has_key?(trip_id) == false
-# 			route_start_hash[trip_id] = nil
-
-# 			#setup stops
-# 			car = Route.find_by(serviceid: trip_id)
-# 			departure_time = minuteparser(stop.departure_time)
-# 			arrival_time = minuteparser(stop.departure_time)
-# 			Stop.create(:stopsequence => stop.stop_sequence, :departure => departure_time, :arrival => arrival_time, :route => car, :lat => Station.where(:name => stop.stop_id).first.lat, :lon => Station.where(:name => stop.stop_id).first.lon)
-# 		end
-# 	end
-# end
 # Type `rake -T` on your command line to see the available rake tasks.
